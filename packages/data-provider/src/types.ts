@@ -1,12 +1,9 @@
 import OpenAI from 'openai';
-import type { UseMutationResult } from '@tanstack/react-query';
 import type { TResPlugin, TMessage, TConversation, TEndpointOption } from './schemas';
 
 export type TOpenAIMessage = OpenAI.Chat.ChatCompletionMessageParam;
 export type TOpenAIFunction = OpenAI.Chat.ChatCompletionCreateParams.Function;
 export type TOpenAIFunctionCall = OpenAI.Chat.ChatCompletionCreateParams.FunctionCallOption;
-
-export type TMutation = UseMutationResult<unknown>;
 
 export * from './schemas';
 
@@ -24,7 +21,7 @@ export type TSubmission = {
   isRegenerate?: boolean;
   conversationId?: string;
   initialResponse: TMessage;
-  conversation: TConversation;
+  conversation: Partial<TConversation>;
   endpointOption: TEndpointOption;
 };
 
@@ -122,6 +119,7 @@ export type TConfig = {
   availableTools?: [];
   plugins?: Record<string, string>;
   azure?: boolean;
+  order: number;
 };
 
 export type TModelsConfig = Record<string, string[]>;
@@ -177,6 +175,7 @@ export type TStartupConfig = {
   openidImageUrl: string;
   discordLoginEnabled: boolean;
   serverDomain: string;
+  emailLoginEnabled: boolean;
   registrationEnabled: boolean;
   socialLoginEnabled: boolean;
   emailEnabled: boolean;

@@ -5,14 +5,26 @@ const path = require('path');
 const { z } = require('zod');
 const OpenAI = require('openai');
 const { Tool } = require('langchain/tools');
+const { HttpsProxyAgent } = require('https-proxy-agent');
 const saveImageFromUrl = require('../saveImageFromUrl');
-const { DALLE3_SYSTEM_PROMPT } = process.env;
+const extractBaseURL = require('~/utils/extractBaseURL');
+const { logger } = require('~/config');
+
+const { DALLE3_SYSTEM_PROMPT, DALLE_REVERSE_PROXY, PROXY } = process.env;
 class DALLE3 extends Tool {
   constructor(fields = {}) {
     super();
 
     let apiKey = fields.DALLE_API_KEY || this.getApiKey();
-    let config = { apiKey };
+    const config = { apiKey };
+    if (DALLE_REVERSE_PROXY) {
+      config.baseURL = extractBaseURL(DALLE_REVERSE_PROXY);
+    }
+
+    if (PROXY) {
+      config.httpAgent = new HttpsProxyAgent(PROXY);
+    }
+
     this.openai = new OpenAI(config);
     this.name = 'dalle';
     this.description = `Use DALLE to create images from text descriptions.
@@ -84,19 +96,30 @@ class DALLE3 extends Tool {
     if (!prompt) {
       throw new Error('Missing required field: prompt');
     }
-    const resp = await this.openai.images.generate({
-      model: 'dall-e-3',
-      quality,
-      style,
-      size,
-      prompt: this.replaceUnwantedChars(prompt),
-      n: 1,
-    });
+
+    let resp;
+    try {
+      resp = await this.openai.images.generate({
+        model: 'dall-e-3',
+        quality,
+        style,
+        size,
+        prompt: this.replaceUnwantedChars(prompt),
+        n: 1,
+      });
+    } catch (error) {
+      return `Something went wrong when trying to generate the image. The DALL-E API may unavailable:
+Error Message: ${error.message}`;
+    }
+
+    if (!resp) {
+      return 'Something went wrong when trying to generate the image. The DALL-E API may unavailable';
+    }
 
     const theImageUrl = resp.data[0].url;
 
     if (!theImageUrl) {
-      throw new Error('No image URL returned from OpenAI API.');
+      return 'No image URL returned from OpenAI API. There may be a problem with the API or your configuration.';
     }
 
     const regex = /img-[\w\d]+.png/;
@@ -105,9 +128,12 @@ class DALLE3 extends Tool {
 
     if (match) {
       imageName = match[0];
-      console.log(imageName); // Output: img-lgCf7ppcbhqQrz6a5ear6FOb.png
+      logger.debug('[DALL-E-3]', { imageName }); // Output: img-lgCf7ppcbhqQrz6a5ear6FOb.png
     } else {
-      console.log('No image name found in the string.');
+      logger.debug('[DALL-E-3] No image name found in the string.', {
+        theImageUrl,
+        data: resp.data[0],
+      });
     }
 
     this.outputPath = path.resolve(
@@ -133,7 +159,7 @@ class DALLE3 extends Tool {
       await saveImageFromUrl(theImageUrl, this.outputPath, imageName);
       this.result = this.getMarkdownImageUrl(imageName);
     } catch (error) {
-      console.error('Error while saving the image:', error);
+      logger.error('Error while saving the image:', error);
       this.result = theImageUrl;
     }
 

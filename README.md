@@ -20,13 +20,33 @@
     <img
       src="https://img.shields.io/badge/DOCS-blue.svg?style=for-the-badge&logo=read-the-docs&logoColor=white&labelColor=000000&logoWidth=20">
   </a>
-  <a aria-label="Sponsors" href="#sponsors">
+  <a aria-label="Sponsors" href="https://github.com/sponsors/danny-avila">
     <img
       src="https://img.shields.io/badge/SPONSORS-brightgreen.svg?style=for-the-badge&logo=github-sponsors&logoColor=white&labelColor=000000&logoWidth=20">
   </a>
 </p>
 
-## All-In-One AI Conversations with LibreChat ##
+# Features
+ - 🖥️ UI matching ChatGPT, including Dark mode, Streaming, and 11-2023 updates
+ - 💬 Multimodal Chat:
+     - Upload and analyze images with GPT-4 and Gemini Vision 📸
+     - More filetypes and Assistants API integration in Active Development 🚧 
+ - 🌎 Multilingual UI:
+     - English, 中文, Deutsch, Español, Français, Italiano, Polski, Português Brasileiro,
+     - Русский, 日本語, Svenska, 한국어, Tiếng Việt, 繁體中文, العربية, Türkçe, Nederlands
+ - 🤖 AI model selection: OpenAI API, Azure, BingAI, ChatGPT, Google Vertex AI, Anthropic (Claude), Plugins
+ - 💾 Create, Save, & Share Custom Presets
+ - 🔄 Edit, Resubmit, and Continue messages with conversation branching
+ - 📤 Export conversations as screenshots, markdown, text, json.
+ - 🔍 Search all messages/conversations
+ - 🔌 Plugins, including web access, image generation with DALL-E-3 and more
+ - 👥 Multi-User, Secure Authentication with Moderation and Token spend tools
+ - ⚙️ Configure Proxy, Reverse Proxy, Docker, many Deployment options, and completely Open-Source
+
+[For a thorough review of our features, see our docs here](https://docs.librechat.ai/features/plugins/introduction.html) 📚
+
+
+## All-In-One AI Conversations with LibreChat
 LibreChat brings together the future of assistant AIs with the revolutionary technology of OpenAI's ChatGPT. Celebrating the original styling, LibreChat gives you the ability to integrate multiple AI models. It also integrates and enhances original client features such as conversation and message search, prompt templates and plugins.
 
 With LibreChat, you no longer need to opt for ChatGPT Plus and can instead use free or pay-per-call APIs. We welcome contributions, cloning, and forking to enhance the capabilities of this advanced chatbot platform.
@@ -35,15 +55,6 @@ With LibreChat, you no longer need to opt for ChatGPT Plus and can instead use f
 
 [![Watch the video](https://img.youtube.com/vi/pNIOs1ovsXw/maxresdefault.jpg)](https://youtu.be/pNIOs1ovsXw)
 Click on the thumbnail to open the video☝️
-
-# Features
-- Response streaming identical to ChatGPT through server-sent events
-- UI from original ChatGPT, including Dark mode
-- AI model selection: OpenAI API, BingAI, ChatGPT Browser, PaLM2, Anthropic (Claude), Plugins
-- Create, Save, & Share custom presets - [More info on prompt presets here](https://github.com/danny-avila/LibreChat/releases/tag/v0.3.0)
-- Edit and Resubmit messages with conversation branching
-- Search all messages/conversations - [More info here](https://github.com/danny-avila/LibreChat/releases/tag/v0.1.0)
-- Plugins now available (including web access, image generation and more)
 
 ---
 
@@ -69,10 +80,12 @@ Keep up with the latest updates by visiting the releases page - [Releases](https
     * [Mac Install🍎](docs/install/mac_install.md)
     * [Windows Install💙](docs/install/windows_install.md)
   * Configuration
-    * [APIs and Tokens](docs/install/apis_and_tokens.md)
+    * [.env Configuration](./docs/install/dotenv.md)
+    * [AI Setup](docs/install/ai_setup.md)
     * [User Auth System](docs/install/user_auth_system.md)
     * [Online MongoDB Database](docs/install/mongodb.md)
     * [Default Language](docs/install/default_language.md)
+    * [LiteLLM Proxy: Load Balance LLMs + Spend Tracking](docs/install/litellm.md)
 </details>
 
 <details>
@@ -97,10 +110,13 @@ Keep up with the latest updates by visiting the releases page - [Releases](https
 
   
   * [Automated Moderation](docs/features/mod_system.md)
+  * [Token Usage](docs/features/token_usage.md)
+  * [Manage Your Database](docs/features/manage_your_database.md)
+  * [PandoraNext Deployment Guide](docs/features/pandoranext.md)
   * [Third-Party Tools](docs/features/third_party.md)
   * [Proxy](docs/features/proxy.md)
   * [Bing Jailbreak](docs/features/bing_jailbreak.md)
-  * [Token Usage](docs/features/token_usage.md)
+
 </details>
 
 <details>
@@ -130,7 +146,6 @@ Keep up with the latest updates by visiting the releases page - [Releases](https
   * [Project Roadmap](https://github.com/users/danny-avila/projects/2)
 </details>
 
-
 ---
 
 ## Star History
@@ -141,17 +156,9 @@ Keep up with the latest updates by visiting the releases page - [Releases](https
 
 ---
 
-## Sponsors
-
-  Sponsored by <a href="https://github.com/mjtechguy"><b>@mjtechguy</b></a>, <a href="https://github.com/SphaeroX"><b>@SphaeroX</b></a>, <a href="https://github.com/DavidDev1334"><b>@DavidDev1334</b></a>, <a href="https://github.com/fuegovic"><b>@fuegovic</b></a>, <a href="https://github.com/Pharrcyde"><b>@Pharrcyde</b></a> 
-  
----
-
 ## Contributors
 Contributions and suggestions bug reports and fixes are welcome!
 Please read the documentation before you do!
-
----
 
 For new features, components, or extensions, please open an issue and discuss before sending a PR. 
 

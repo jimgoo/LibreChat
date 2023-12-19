@@ -1,6 +1,10 @@
 const express = require('express');
+const { isEnabled } = require('~/server/utils');
+const { logger } = require('~/config');
+
 const router = express.Router();
-const { isEnabled } = require('../utils');
+const emailLoginEnabled =
+  process.env.ALLOW_EMAIL_LOGIN === undefined || isEnabled(process.env.ALLOW_EMAIL_LOGIN);
 
 router.get('/', async function (req, res) {
   try {
@@ -19,10 +23,11 @@ router.get('/', async function (req, res) {
       githubLoginEnabled: !!process.env.GITHUB_CLIENT_ID && !!process.env.GITHUB_CLIENT_SECRET,
       discordLoginEnabled: !!process.env.DISCORD_CLIENT_ID && !!process.env.DISCORD_CLIENT_SECRET,
       serverDomain: process.env.DOMAIN_SERVER || 'http://localhost:3080',
+      emailLoginEnabled,
       registrationEnabled: isEnabled(process.env.ALLOW_REGISTRATION),
       socialLoginEnabled: isEnabled(process.env.ALLOW_SOCIAL_LOGIN),
       emailEnabled:
-        !process.env.EMAIL_SERVICE &&
+        (!!process.env.EMAIL_SERVICE || !!process.env.EMAIL_HOST) &&
         !!process.env.EMAIL_USERNAME &&
         !!process.env.EMAIL_PASSWORD &&
         !!process.env.EMAIL_FROM,
@@ -35,7 +40,7 @@ router.get('/', async function (req, res) {
 
     return res.status(200).send(payload);
   } catch (err) {
-    console.error(err);
+    logger.error('Error in startup config', err);
     return res.status(500).send({ error: err.message });
   }
 });

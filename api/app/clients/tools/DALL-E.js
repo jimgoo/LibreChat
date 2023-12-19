@@ -1,19 +1,31 @@
 // From https://platform.openai.com/docs/api-reference/images/create
 // To use this tool, you must pass in a configured OpenAIApi object.
 const fs = require('fs');
-const OpenAI = require('openai');
-// const { genAzureEndpoint } = require('../../../utils/genAzureEndpoints');
-const { Tool } = require('langchain/tools');
-const saveImageFromUrl = require('./saveImageFromUrl');
 const path = require('path');
+const OpenAI = require('openai');
+// const { genAzureEndpoint } = require('~/utils/genAzureEndpoints');
+const { Tool } = require('langchain/tools');
+const { HttpsProxyAgent } = require('https-proxy-agent');
+const extractBaseURL = require('~/utils/extractBaseURL');
+const saveImageFromUrl = require('./saveImageFromUrl');
+const { logger } = require('~/config');
 
+const { DALLE_REVERSE_PROXY, PROXY } = process.env;
 class OpenAICreateImage extends Tool {
   constructor(fields = {}) {
     super();
 
     let apiKey = fields.DALLE_API_KEY || this.getApiKey();
+    const config = { apiKey };
+    if (DALLE_REVERSE_PROXY) {
+      config.baseURL = extractBaseURL(DALLE_REVERSE_PROXY);
+    }
+
+    if (PROXY) {
+      config.httpAgent = new HttpsProxyAgent(PROXY);
+    }
+
     // let azureKey = fields.AZURE_API_KEY || process.env.AZURE_API_KEY;
-    let config = { apiKey };
 
     // if (azureKey) {
     //   apiKey = azureKey;
@@ -91,9 +103,12 @@ Guidelines:
 
     if (match) {
       imageName = match[0];
-      console.log(imageName); // Output: img-lgCf7ppcbhqQrz6a5ear6FOb.png
+      logger.debug('[DALL-E]', { imageName }); // Output: img-lgCf7ppcbhqQrz6a5ear6FOb.png
     } else {
-      console.log('No image name found in the string.');
+      logger.debug('[DALL-E] No image name found in the string.', {
+        theImageUrl,
+        data: resp.data[0],
+      });
     }
 
     this.outputPath = path.resolve(__dirname, '..', '..', '..', '..', 'client', 'public', 'images');
@@ -109,7 +124,7 @@ Guidelines:
       await saveImageFromUrl(theImageUrl, this.outputPath, imageName);
       this.result = this.getMarkdownImageUrl(imageName);
     } catch (error) {
-      console.error('Error while saving the image:', error);
+      logger.error('Error while saving the DALL-E image:', error);
       this.result = theImageUrl;
     }
 

@@ -32,6 +32,9 @@ Here are the steps to follow:
 
 Note: If you run the command on the same computer and want to access it, navigate to `localhost:3080`. You should see a login page where you can create or sign in to your account. Then you can choose an AI model and start chatting.
 
+- [Manage Your MongoDB Database (optional)](../features/manage_your_database.md)
+Safely access and manage your MongoDB database using Mongo Express
+
 Have fun!
 
 ---
@@ -88,8 +91,8 @@ sudo apt-get install -y nodejs
 
 ## [Create a MongoDB database](mongodb.md) (Required)
 
-## [Get Your API keys and Tokens](apis_and_tokens.md) (Required)
-- You must set up at least one of these tokens or APIs to run the app.
+## [Setup your AI Endpoints](ai_setup.md) (Required)
+- At least one AI endpoint should be setup for use.
 
 ## [User/Auth System](../install/user_auth_system.md) (Optional)
 - How to set up the user/auth system and Google login.

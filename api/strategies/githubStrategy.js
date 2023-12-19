@@ -1,7 +1,6 @@
 const { Strategy: GitHubStrategy } = require('passport-github2');
-const User = require('../models/User');
-const config = require('../../config/loader');
-const domains = config.domains;
+const { logger } = require('~/config');
+const User = require('~/models/User');
 
 const githubLogin = async (accessToken, refreshToken, profile, cb) => {
   try {
@@ -31,7 +30,7 @@ const githubLogin = async (accessToken, refreshToken, profile, cb) => {
 
     return cb(null, false, { message: 'User not found.' });
   } catch (err) {
-    console.error(err);
+    logger.error('[githubLogin]', err);
     return cb(err);
   }
 };
@@ -41,7 +40,7 @@ module.exports = () =>
     {
       clientID: process.env.GITHUB_CLIENT_ID,
       clientSecret: process.env.GITHUB_CLIENT_SECRET,
-      callbackURL: `${domains.server}${process.env.GITHUB_CALLBACK_URL}`,
+      callbackURL: `${process.env.DOMAIN_SERVER}${process.env.GITHUB_CALLBACK_URL}`,
       proxy: false,
       scope: ['user:email'],
     },

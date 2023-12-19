@@ -1,7 +1,6 @@
 const FacebookStrategy = require('passport-facebook').Strategy;
-const User = require('../models/User');
-const config = require('../../config/loader');
-const domains = config.domains;
+const { logger } = require('~/config');
+const User = require('~/models/User');
 
 const facebookLogin = async (accessToken, refreshToken, profile, cb) => {
   try {
@@ -34,7 +33,7 @@ const facebookLogin = async (accessToken, refreshToken, profile, cb) => {
       message: 'User not found.',
     });
   } catch (err) {
-    console.error(err);
+    logger.error('[facebookLogin]', err);
     return cb(err);
   }
 };
@@ -44,7 +43,7 @@ module.exports = () =>
     {
       clientID: process.env.FACEBOOK_CLIENT_ID,
       clientSecret: process.env.FACEBOOK_CLIENT_SECRET,
-      callbackURL: `${domains.server}${process.env.FACEBOOK_CALLBACK_URL}`,
+      callbackURL: `${process.env.DOMAIN_SERVER}${process.env.FACEBOOK_CALLBACK_URL}`,
       proxy: true,
       scope: ['public_profile'],
       profileFields: ['id', 'email', 'name'],

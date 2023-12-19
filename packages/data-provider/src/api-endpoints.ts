@@ -38,6 +38,8 @@ export const deletePreset = () => '/api/presets/delete';
 
 export const aiEndpoints = () => '/api/endpoints';
 
+export const endpointsConfigOverride = () => '/api/endpoints/config/override';
+
 export const models = () => '/api/models';
 
 export const tokenizer = () => '/api/tokenizer';
@@ -61,3 +63,9 @@ export const resetPassword = () => '/api/auth/resetPassword';
 export const plugins = () => '/api/plugins';
 
 export const config = () => '/api/config';
+
+export const assistants = (id?: string) => `/api/assistants${id ? `/${id}` : ''}`;
+
+export const files = () => '/api/files';
+
+export const images = () => `${files()}/images`;

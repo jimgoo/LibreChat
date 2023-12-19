@@ -1,5 +1,5 @@
 const mongoose = require('mongoose');
-const mongoMeili = require('../plugins/mongoMeili');
+const mongoMeili = require('~/models/plugins/mongoMeili');
 const messageSchema = mongoose.Schema(
   {
     messageId: {
@@ -85,6 +85,7 @@ const messageSchema = mongoose.Schema(
       select: false,
       default: false,
     },
+    files: [{ type: mongoose.Schema.Types.Mixed }],
     plugin: {
       latest: {
         type: String,

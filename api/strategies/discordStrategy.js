@@ -1,7 +1,6 @@
 const { Strategy: DiscordStrategy } = require('passport-discord');
-const User = require('../models/User');
-const config = require('../../config/loader');
-const domains = config.domains;
+const { logger } = require('~/config');
+const User = require('~/models/User');
 
 const discordLogin = async (accessToken, refreshToken, profile, cb) => {
   try {
@@ -42,7 +41,7 @@ const discordLogin = async (accessToken, refreshToken, profile, cb) => {
       message: 'User not found.',
     });
   } catch (err) {
-    console.error(err);
+    logger.error('[discordLogin]', err);
     return cb(err);
   }
 };
@@ -52,7 +51,7 @@ module.exports = () =>
     {
       clientID: process.env.DISCORD_CLIENT_ID,
       clientSecret: process.env.DISCORD_CLIENT_SECRET,
-      callbackURL: `${domains.server}${process.env.DISCORD_CALLBACK_URL}`,
+      callbackURL: `${process.env.DOMAIN_SERVER}${process.env.DISCORD_CALLBACK_URL}`,
       scope: ['identify', 'email'],
       authorizationURL: 'https://discord.com/api/oauth2/authorize?prompt=none',
     },

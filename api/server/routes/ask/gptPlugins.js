@@ -1,11 +1,11 @@
 const express = require('express');
 const router = express.Router();
-const { getResponseSender } = require('../endpoints/schemas');
-const { validateTools } = require('../../../app');
-const { addTitle } = require('../endpoints/openAI');
-const { initializeClient } = require('../endpoints/gptPlugins');
-const { saveMessage, getConvoTitle, getConvo } = require('../../../models');
-const { sendMessage, createOnProgress } = require('../../utils');
+const { getResponseSender } = require('librechat-data-provider');
+const { validateTools } = require('~/app');
+const { addTitle } = require('~/server/services/Endpoints/openAI');
+const { initializeClient } = require('~/server/services/Endpoints/gptPlugins');
+const { saveMessage, getConvoTitle, getConvo } = require('~/models');
+const { sendMessage, createOnProgress } = require('~/server/utils');
 const {
   handleAbort,
   createAbortController,
@@ -13,7 +13,8 @@ const {
   setHeaders,
   validateEndpoint,
   buildEndpointOption,
-} = require('../../middleware');
+} = require('~/server/middleware');
+const { logger } = require('~/config');
 
 router.post('/abort', handleAbort());
 
@@ -25,8 +26,7 @@ router.post('/', validateEndpoint, buildEndpointOption, setHeaders, async (req, 
     parentMessageId = null,
     overrideParentMessageId = null,
   } = req.body;
-  console.log('ask log');
-  console.dir({ text, conversationId, endpointOption }, { depth: null });
+  logger.debug('[/ask/gptPlugins]', { text, conversationId, ...endpointOption });
   let metadata;
   let userMessage;
   let promptTokens;
@@ -34,7 +34,7 @@ router.post('/', validateEndpoint, buildEndpointOption, setHeaders, async (req, 
   let responseMessageId;
   let lastSavedTimestamp = 0;
   let saveDelay = 100;
-  const sender = getResponseSender(endpointOption);
+  const sender = getResponseSender({ ...endpointOption, model: endpointOption.modelOptions.model });
   const newConvo = !conversationId;
   const user = req.user.id;
 
@@ -189,8 +189,8 @@ router.post('/', validateEndpoint, buildEndpointOption, setHeaders, async (req, 
       response = { ...response, ...metadata };
     }
 
-    console.log('CLIENT RESPONSE');
-    console.dir(response, { depth: null });
+    logger.debug('[/ask/gptPlugins]', response);
+
     response.plugins = plugins.map((p) => ({ ...p, loading: false }));
     await saveMessage({ ...response, user });
 

@@ -303,14 +303,14 @@ cd LibreChat/
 ``` 
 
 ### **2. Create a global environment file.**
-The default values are enough to get you started and running the app.
+The default values are enough to get you started and running the app, allowing you to provide your credentials from the web app.
 
 ```bash
 # Copies the example file as your global env file
 cp .env.example .env
 ```
 
-However, it's highly recommended you use environment variables for any sensitive credentials until we remove use of localStorage for passing credentials from the frontend
+However, if you'd like to provide any credentials for all users of your instance to consume, you can add them to the .env file as follows:
 
 ```bash
 nano .env
@@ -334,7 +334,7 @@ ALLOW_REGISTRATION=false
 ```
 
 **Resources:**
-- [Tokens/Apis/etc](../install/apis_and_tokens.md)
+- [Tokens/Apis/etc](../install/ai_setup.md)
 - [User/Auth System](../install/user_auth_system.md)
 
 ### **3. Start docker, and then run the installation/update script**

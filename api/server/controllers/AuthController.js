@@ -1,15 +1,14 @@
-const {
-  registerUser,
-  requestPasswordReset,
-  resetPassword,
-  setAuthTokens,
-} = require('../services/AuthService');
-const jose = require('jose');
-const jwt = require('jsonwebtoken');
-const Session = require('../../models/Session');
-const User = require('../../models/User');
 const crypto = require('crypto');
 const cookies = require('cookie');
+const jwt = require('jsonwebtoken');
+const { Session, User } = require('~/models');
+const {
+  registerUser,
+  resetPassword,
+  setAuthTokens,
+  requestPasswordReset,
+} = require('~/server/services/AuthService');
+const { logger } = require('~/config');
 
 const registrationController = async (req, res) => {
   try {
@@ -29,7 +28,7 @@ const registrationController = async (req, res) => {
       res.status(status).send({ message });
     }
   } catch (err) {
-    console.log(err);
+    logger.error('[registrationController]', err);
     return res.status(500).json({ message: err.message });
   }
 };
@@ -47,7 +46,7 @@ const resetPasswordRequestController = async (req, res) => {
       return res.status(200).json(resetService);
     }
   } catch (e) {
-    console.log(e);
+    logger.error('[resetPasswordRequestController]', e);
     return res.status(400).json({ message: e.message });
   }
 };
@@ -65,7 +64,7 @@ const resetPasswordController = async (req, res) => {
       return res.status(200).json(resetPasswordService);
     }
   } catch (e) {
-    console.log(e);
+    logger.error('[resetPasswordController]', e);
     return res.status(400).json({ message: e.message });
   }
 };
@@ -78,12 +77,7 @@ const refreshController = async (req, res) => {
 
   try {
     let payload;
-    if (typeof Bun !== 'undefined') {
-      const secret = new TextEncoder().encode(process.env.JWT_REFRESH_SECRET);
-      ({ payload } = await jose.jwtVerify(refreshToken, secret));
-    } else {
-      payload = jwt.verify(refreshToken, process.env.JWT_REFRESH_SECRET);
-    }
+    payload = jwt.verify(refreshToken, process.env.JWT_REFRESH_SECRET);
     const userId = payload.id;
     const user = await User.findOne({ _id: userId });
     if (!user) {
@@ -115,8 +109,7 @@ const refreshController = async (req, res) => {
       res.status(401).send('Refresh token expired or not found for this user');
     }
   } catch (err) {
-    console.error('Refresh token error', refreshToken);
-    console.error(err);
+    logger.error(`[refreshController] Refresh token: ${refreshToken}`, err);
     res.status(403).send('Invalid refresh token');
   }
 };

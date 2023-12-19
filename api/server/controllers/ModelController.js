@@ -1,23 +1,17 @@
-const {
-  getOpenAIModels,
-  getChatGPTBrowserModels,
-  getAnthropicModels,
-} = require('../services/ModelService');
-
-const { useAzurePlugins } = require('../services/EndpointService').config;
+const { getLogStores } = require('~/cache');
+const { CacheKeys } = require('~/common/enums');
+const { loadDefaultModels } = require('~/server/services/Config');
 
 async function modelController(req, res) {
-  const google = ['chat-bison', 'text-bison', 'codechat-bison'];
-  const openAI = await getOpenAIModels();
-  const azureOpenAI = await getOpenAIModels({ azure: true });
-  const gptPlugins = await getOpenAIModels({ azure: useAzurePlugins, plugins: true });
-  const bingAI = ['BingAI', 'Sydney'];
-  const chatGPTBrowser = getChatGPTBrowserModels();
-  const anthropic = getAnthropicModels();
-
-  res.send(
-    JSON.stringify({ azureOpenAI, openAI, google, bingAI, chatGPTBrowser, gptPlugins, anthropic }),
-  );
+  const cache = getLogStores(CacheKeys.CONFIG);
+  let modelConfig = await cache.get(CacheKeys.MODELS_CONFIG);
+  if (modelConfig) {
+    res.send(modelConfig);
+    return;
+  }
+  modelConfig = await loadDefaultModels();
+  await cache.set(CacheKeys.MODELS_CONFIG, modelConfig);
+  res.send(modelConfig);
 }
 
 module.exports = modelController;

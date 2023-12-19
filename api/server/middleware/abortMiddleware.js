@@ -1,19 +1,21 @@
-const { sendMessage, sendError, countTokens, isEnabled } = require('../utils');
-const { saveMessage, getConvo, getConvoTitle } = require('../../models');
-const clearPendingReq = require('../../cache/clearPendingReq');
-const spendTokens = require('../../models/spendTokens');
+const { sendMessage, sendError, countTokens, isEnabled } = require('~/server/utils');
+const { saveMessage, getConvo, getConvoTitle } = require('~/models');
+const clearPendingReq = require('~/cache/clearPendingReq');
 const abortControllers = require('./abortControllers');
+const { redactMessage } = require('~/config/parsers');
+const spendTokens = require('~/models/spendTokens');
+const { logger } = require('~/config');
 
 async function abortMessage(req, res) {
   const { abortKey } = req.body;
 
   if (!abortControllers.has(abortKey) && !res.headersSent) {
-    return res.status(404).send('Request not found');
+    return res.status(404).send({ message: 'Request not found' });
   }
 
   const { abortController } = abortControllers.get(abortKey);
   const ret = await abortController.abortCompletion();
-  console.log('Aborted request', abortKey);
+  logger.debug('[abortMessage] Aborted request', { abortKey });
   abortControllers.delete(abortKey);
   res.send(JSON.stringify(ret));
 }
@@ -26,7 +28,7 @@ const handleAbort = () => {
       }
       return await abortMessage(req, res);
     } catch (err) {
-      console.error(err);
+      logger.error('[abortMessage] handleAbort error', err);
     }
   };
 };
@@ -82,7 +84,7 @@ const createAbortController = (req, res, getAbortData) => {
 };
 
 const handleAbortError = async (res, req, error, data) => {
-  console.error(error);
+  logger.error('[handleAbortError] response error and aborting request', error);
   const { sender, conversationId, messageId, parentMessageId, partialText } = data;
 
   const respondWithError = async () => {
@@ -91,7 +93,7 @@ const handleAbortError = async (res, req, error, data) => {
       messageId,
       conversationId,
       parentMessageId,
-      text: error.message,
+      text: redactMessage(error.message),
       shouldSaveMessage: true,
       user: req.user.id,
     };
@@ -110,7 +112,7 @@ const handleAbortError = async (res, req, error, data) => {
     try {
       return await abortMessage(req, res);
     } catch (err) {
-      console.error(err);
+      logger.error('[handleAbortError] error while trying to abort message', err);
       return respondWithError();
     }
   } else {

@@ -23,8 +23,11 @@ Before running LibreChat with Docker, you need to configure some settings:
 - Provide all necessary credentials in the `.env` file before the next step.
    - Docker will read this env file. See the `.env.example` file for reference.
 
-#### [API Keys and Tokens Setup](apis_and_tokens.md) (Required)
-You must set up at least one of these tokens or APIs to run the app.
+#### [AI Setup](ai_setup.md) (Required)
+At least one AI endpoint should be setup for use.
+
+#### [Manage Your MongoDB Database](../features/manage_your_database.md) (Optional)
+Safely access and manage your MongoDB database using Mongo Express
 
 #### [User Authentication System Setup](../install/user_auth_system.md) (Optional)
 How to set up the user/auth system and Google login.
@@ -61,8 +64,8 @@ git pull origin main
 docker rmi librechat:latest
 # Remove all unused dangling Docker images
 docker image prune -f
-# Building a new LibreChat image
-docker-compose build
+# Building a new LibreChat image without cache
+docker-compose build --no-cache
 
 # Start LibreChat
 docker-compose up

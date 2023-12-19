@@ -124,7 +124,7 @@ export default {
     'Top-k는 모델이 출력에 사용할 토큰을 선택하는 방식을 변경합니다. top-k가 1인 경우 모델의 어휘 중 가장 확률이 높은 토큰이 선택됩니다(greedy decoding). top-k가 3인 경우 다음 토큰은 가장 확률이 높은 3개의 토큰 중에서 선택됩니다(temperature 사용).',
   com_endpoint_google_maxoutputtokens:
     '응답에서 생성할 수 있는 최대 토큰 수입니다. 짧은 응답에는 낮은 값을, 긴 응답에는 높은 값을 지정하세요.',
-  com_endpoint_google_custom_name_placeholder: 'PaLM2에 대한 사용자 정의 이름 설정',
+  com_endpoint_google_custom_name_placeholder: 'Google에 대한 사용자 정의 이름 설정',
   com_endpoint_prompt_prefix_placeholder:
     '사용자 정의 지시사항 또는 컨텍스트를 설정하세요. 비어 있으면 무시됩니다.',
   com_endpoint_custom_name: '사용자 정의 이름',
@@ -231,6 +231,7 @@ export default {
   com_nav_confirm_clear: '지우기 확인',
   com_nav_close_sidebar: '사이드바 닫기',
   com_nav_open_sidebar: '사이드바 열기',
+  com_nav_send_message: '메시지 보내기',
   com_nav_log_out: '로그아웃',
   com_nav_user: '사용자',
   com_nav_clear_conversation: '대화 지우기',

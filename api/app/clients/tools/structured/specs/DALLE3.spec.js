@@ -3,6 +3,7 @@ const path = require('path');
 const OpenAI = require('openai');
 const DALLE3 = require('../DALLE3');
 const saveImageFromUrl = require('../../saveImageFromUrl');
+const { logger } = require('~/config');
 
 jest.mock('openai');
 
@@ -134,15 +135,6 @@ describe('DALLE3', () => {
     await expect(dalle._call(mockData)).rejects.toThrow('Missing required field: prompt');
   });
 
-  it('should throw an error if no image URL is returned from OpenAI API', async () => {
-    const mockData = {
-      prompt: 'A test prompt',
-    };
-    // Simulate a response with an object that has a `url` property set to `undefined`
-    generate.mockResolvedValue({ data: [{ url: undefined }] });
-    await expect(dalle._call(mockData)).rejects.toThrow('No image URL returned from OpenAI API.');
-  });
-
   it('should log to console if no image name is found in the URL', async () => {
     const mockData = {
       prompt: 'A test prompt',
@@ -154,10 +146,13 @@ describe('DALLE3', () => {
         },
       ],
     };
-    console.log = jest.fn(); // Mock console.log
+
     generate.mockResolvedValue(mockResponse);
     await dalle._call(mockData);
-    expect(console.log).toHaveBeenCalledWith('No image name found in the string.');
+    expect(logger.debug).toHaveBeenCalledWith('[DALL-E-3] No image name found in the string.', {
+      data: { url: 'http://example.com/invalid-url' },
+      theImageUrl: 'http://example.com/invalid-url',
+    });
   });
 
   it('should create the directory if it does not exist', async () => {
@@ -191,9 +186,8 @@ describe('DALLE3', () => {
     const error = new Error('Error while saving the image');
     generate.mockResolvedValue(mockResponse);
     saveImageFromUrl.mockRejectedValue(error);
-    console.error = jest.fn(); // Mock console.error
     const result = await dalle._call(mockData);
-    expect(console.error).toHaveBeenCalledWith('Error while saving the image:', error);
+    expect(logger.error).toHaveBeenCalledWith('Error while saving the image:', error);
     expect(result).toBe(mockResponse.data[0].url);
   });
 });

@@ -1,19 +1,21 @@
-import { useNavigate } from 'react-router-dom';
-import { useLocalize, useConversation } from '~/hooks';
+import { useLocalize, useConversation, useNewConvo, useOriginNavigate } from '~/hooks';
 
-export default function NewChat() {
+export default function NewChat({ toggleNav }: { toggleNav: () => void }) {
   const { newConversation } = useConversation();
-  const navigate = useNavigate();
+  const { newConversation: newConvo } = useNewConvo();
+  const navigate = useOriginNavigate();
   const localize = useLocalize();
 
   const clickHandler = () => {
+    newConvo();
     newConversation();
-    navigate('/chat/new');
+    navigate('new');
+    toggleNav();
   };
 
   return (
     <a
-      data-testid="new-chat-button"
+      data-testid="nav-new-chat-button"
       onClick={clickHandler}
       className="flex h-11 flex-shrink-0 flex-grow cursor-pointer items-center gap-3 rounded-md border border-white/20 px-3 py-3 text-sm text-white transition-colors duration-200 hover:bg-gray-500/10"
     >

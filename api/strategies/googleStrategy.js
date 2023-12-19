@@ -1,7 +1,6 @@
 const { Strategy: GoogleStrategy } = require('passport-google-oauth20');
-const User = require('../models/User');
-const config = require('../../config/loader');
-const domains = config.domains;
+const { logger } = require('~/config');
+const User = require('~/models/User');
 
 const googleLogin = async (accessToken, refreshToken, profile, cb) => {
   try {
@@ -31,7 +30,7 @@ const googleLogin = async (accessToken, refreshToken, profile, cb) => {
 
     return cb(null, false, { message: 'User not found.' });
   } catch (err) {
-    console.error(err);
+    logger.error('[googleLogin]', err);
     return cb(err);
   }
 };
@@ -41,7 +40,7 @@ module.exports = () =>
     {
       clientID: process.env.GOOGLE_CLIENT_ID,
       clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-      callbackURL: `${domains.server}${process.env.GOOGLE_CALLBACK_URL}`,
+      callbackURL: `${process.env.DOMAIN_SERVER}${process.env.GOOGLE_CALLBACK_URL}`,
       proxy: true,
     },
     googleLogin,

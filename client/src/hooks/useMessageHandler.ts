@@ -1,9 +1,10 @@
 import { v4 } from 'uuid';
+import { parseConvo, getResponseSender } from 'librechat-data-provider';
 import { useRecoilState, useRecoilValue, useSetRecoilState } from 'recoil';
-import { parseConvo, getResponseSender, useGetEndpointsQuery } from 'librechat-data-provider';
+import { useGetEndpointsQuery } from 'librechat-data-provider/react-query';
 import type { TMessage, TSubmission, TEndpointOption } from 'librechat-data-provider';
 import type { TAskFunction } from '~/common';
-import useUserKey from './useUserKey';
+import useUserKey from './Input/useUserKey';
 import store from '~/store';
 
 const useMessageHandler = () => {
@@ -75,9 +76,8 @@ const useMessageHandler = () => {
       conversationId = null;
     }
     const currentMsg: TMessage = {
-      sender: 'User',
       text,
-      current: true,
+      sender: 'User',
       isCreatedByUser: true,
       parentMessageId,
       conversationId,

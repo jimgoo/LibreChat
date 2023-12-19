@@ -3,7 +3,7 @@ import { useEffect } from 'react';
 import filenamify from 'filenamify';
 import exportFromJSON from 'export-from-json';
 import { useSetRecoilState, useRecoilState } from 'recoil';
-import { useGetEndpointsQuery } from 'librechat-data-provider';
+import { useGetEndpointsQuery } from 'librechat-data-provider/react-query';
 import type { TEditPresetProps } from '~/common';
 import { useSetOptions, useLocalize } from '~/hooks';
 import { Input, Label, Dropdown, Dialog, DialogClose, DialogButton } from '~/components/';
@@ -91,14 +91,9 @@ const EditPresetDialog = ({ open, onOpenChange, preset: _preset, title }: TEditP
                   </Label>
                   <Dropdown
                     value={endpoint || ''}
-                    onChange={setOption('endpoint')}
+                    onChange={(value) => setOption('endpoint')(value)}
                     options={availableEndpoints}
-                    className={cn(
-                      defaultTextProps,
-                      'flex h-10 max-h-10 w-full resize-none ',
-                      removeFocusOutlines,
-                    )}
-                    containerClassName="flex w-full resize-none z-[51]"
+                    className={cn()}
                   />
                 </div>
               </div>

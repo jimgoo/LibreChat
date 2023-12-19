@@ -1,7 +1,137 @@
 require('dotenv').config();
+const OpenAI = require('openai');
+const { fetchEventSource } = require('@waylaidwanderer/fetch-event-source');
+const { genAzureChatCompletion } = require('~/utils/azureUtils');
 const OpenAIClient = require('../OpenAIClient');
-
 jest.mock('meilisearch');
+
+jest.mock('~/lib/db/connectDb');
+jest.mock('~/models', () => ({
+  User: jest.fn(),
+  Key: jest.fn(),
+  Session: jest.fn(),
+  Balance: jest.fn(),
+  Transaction: jest.fn(),
+  getMessages: jest.fn().mockResolvedValue([]),
+  saveMessage: jest.fn(),
+  updateMessage: jest.fn(),
+  deleteMessagesSince: jest.fn(),
+  deleteMessages: jest.fn(),
+  getConvoTitle: jest.fn(),
+  getConvo: jest.fn(),
+  saveConvo: jest.fn(),
+  deleteConvos: jest.fn(),
+  getPreset: jest.fn(),
+  getPresets: jest.fn(),
+  savePreset: jest.fn(),
+  deletePresets: jest.fn(),
+  findFileById: jest.fn(),
+  createFile: jest.fn(),
+  updateFile: jest.fn(),
+  deleteFile: jest.fn(),
+  deleteFiles: jest.fn(),
+  getFiles: jest.fn(),
+  updateFileUsage: jest.fn(),
+}));
+
+jest.mock('langchain/chat_models/openai', () => {
+  return {
+    ChatOpenAI: jest.fn().mockImplementation(() => {
+      return {};
+    }),
+  };
+});
+
+jest.mock('openai');
+
+jest.spyOn(OpenAI, 'constructor').mockImplementation(function (...options) {
+  // We can add additional logic here if needed
+  return new OpenAI(...options);
+});
+
+const finalChatCompletion = jest.fn().mockResolvedValue({
+  choices: [
+    {
+      message: { role: 'assistant', content: 'Mock message content' },
+      finish_reason: 'Mock finish reason',
+    },
+  ],
+});
+
+const stream = jest.fn().mockImplementation(() => {
+  let isDone = false;
+  let isError = false;
+  let errorCallback = null;
+
+  const onEventHandlers = {
+    abort: () => {
+      // Mock abort behavior
+    },
+    error: (callback) => {
+      errorCallback = callback; // Save the error callback for later use
+    },
+    finalMessage: (callback) => {
+      callback({ role: 'assistant', content: 'Mock Response' });
+      isDone = true; // Set stream to done
+    },
+  };
+
+  const mockStream = {
+    on: jest.fn((event, callback) => {
+      if (onEventHandlers[event]) {
+        onEventHandlers[event](callback);
+      }
+      return mockStream;
+    }),
+    finalChatCompletion,
+    controller: { abort: jest.fn() },
+    triggerError: () => {
+      isError = true;
+      if (errorCallback) {
+        errorCallback(new Error('Mock error'));
+      }
+    },
+    [Symbol.asyncIterator]: () => {
+      return {
+        next: () => {
+          if (isError) {
+            return Promise.reject(new Error('Mock error'));
+          }
+          if (isDone) {
+            return Promise.resolve({ done: true });
+          }
+          const chunk = { choices: [{ delta: { content: 'Mock chunk' } }] };
+          return Promise.resolve({ value: chunk, done: false });
+        },
+      };
+    },
+  };
+  return mockStream;
+});
+
+const create = jest.fn().mockResolvedValue({
+  choices: [
+    {
+      message: { content: 'Mock message content' },
+      finish_reason: 'Mock finish reason',
+    },
+  ],
+});
+
+OpenAI.mockImplementation(() => ({
+  beta: {
+    chat: {
+      completions: {
+        stream,
+      },
+    },
+  },
+  chat: {
+    completions: {
+      create,
+    },
+  },
+}));
 
 describe('OpenAIClient', () => {
   let client, client2;
@@ -12,15 +142,31 @@ describe('OpenAIClient', () => {
     { role: 'assistant', sender: 'Assistant', text: 'Hi', messageId: '2' },
   ];
 
+  const defaultOptions = {
+    // debug: true,
+    openaiApiKey: 'new-api-key',
+    modelOptions: {
+      model,
+      temperature: 0.7,
+    },
+  };
+
+  const defaultAzureOptions = {
+    azureOpenAIApiInstanceName: 'your-instance-name',
+    azureOpenAIApiDeploymentName: 'your-deployment-name',
+    azureOpenAIApiVersion: '2020-07-01-preview',
+  };
+
+  beforeAll(() => {
+    jest.spyOn(console, 'warn').mockImplementation(() => {});
+  });
+
+  afterAll(() => {
+    console.warn.mockRestore();
+  });
+
   beforeEach(() => {
-    const options = {
-      // debug: true,
-      openaiApiKey: 'new-api-key',
-      modelOptions: {
-        model,
-        temperature: 0.7,
-      },
-    };
+    const options = { ...defaultOptions };
     client = new OpenAIClient('test-api-key', options);
     client2 = new OpenAIClient('test-api-key', options);
     client.summarizeMessages = jest.fn().mockResolvedValue({
@@ -32,6 +178,7 @@ describe('OpenAIClient', () => {
       .fn()
       .mockResolvedValue({ prompt: messages.map((m) => m.text).join('\n') });
     client.constructor.freeAndResetAllEncoders();
+    client.getMessages = jest.fn().mockResolvedValue([]);
   });
 
   describe('setOptions', () => {
@@ -86,7 +233,97 @@ describe('OpenAIClient', () => {
 
       client.setOptions({ reverseProxyUrl: 'https://example.com/completions' });
       expect(client.completionsUrl).toBe('https://example.com/completions');
-      expect(client.langchainProxy).toBe(null);
+      expect(client.langchainProxy).toBe('https://example.com/completions');
+    });
+  });
+
+  describe('setOptions with Simplified Azure Integration', () => {
+    afterEach(() => {
+      delete process.env.AZURE_OPENAI_DEFAULT_MODEL;
+      delete process.env.AZURE_USE_MODEL_AS_DEPLOYMENT_NAME;
+    });
+
+    const azureOpenAIApiInstanceName = 'test-instance';
+    const azureOpenAIApiDeploymentName = 'test-deployment';
+    const azureOpenAIApiVersion = '2020-07-01-preview';
+
+    const createOptions = (model) => ({
+      modelOptions: { model },
+      azure: {
+        azureOpenAIApiInstanceName,
+        azureOpenAIApiDeploymentName,
+        azureOpenAIApiVersion,
+      },
+    });
+
+    it('should set model from AZURE_OPENAI_DEFAULT_MODEL when Azure is enabled', () => {
+      process.env.AZURE_OPENAI_DEFAULT_MODEL = 'gpt-4-azure';
+      const options = createOptions('test');
+      client.azure = options.azure;
+      client.setOptions(options);
+      expect(client.modelOptions.model).toBe('gpt-4-azure');
+    });
+
+    it('should not change model if Azure is not enabled', () => {
+      process.env.AZURE_OPENAI_DEFAULT_MODEL = 'gpt-4-azure';
+      const originalModel = 'test';
+      client.azure = false;
+      client.setOptions(createOptions('test'));
+      expect(client.modelOptions.model).toBe(originalModel);
+    });
+
+    it('should not change model if AZURE_OPENAI_DEFAULT_MODEL is not set and model is passed', () => {
+      const originalModel = 'GROK-LLM';
+      const options = createOptions(originalModel);
+      client.azure = options.azure;
+      client.setOptions(options);
+      expect(client.modelOptions.model).toBe(originalModel);
+    });
+
+    it('should change model if AZURE_OPENAI_DEFAULT_MODEL is set and model is passed', () => {
+      process.env.AZURE_OPENAI_DEFAULT_MODEL = 'gpt-4-azure';
+      const originalModel = 'GROK-LLM';
+      const options = createOptions(originalModel);
+      client.azure = options.azure;
+      client.setOptions(options);
+      expect(client.modelOptions.model).toBe(process.env.AZURE_OPENAI_DEFAULT_MODEL);
+    });
+
+    it('should include model in deployment name if AZURE_USE_MODEL_AS_DEPLOYMENT_NAME is set', () => {
+      process.env.AZURE_USE_MODEL_AS_DEPLOYMENT_NAME = 'true';
+      const model = 'gpt-4-azure';
+
+      const AzureClient = new OpenAIClient('test-api-key', createOptions(model));
+
+      const expectedValue = `https://${azureOpenAIApiInstanceName}.openai.azure.com/openai/deployments/${model}/chat/completions?api-version=${azureOpenAIApiVersion}`;
+
+      expect(AzureClient.modelOptions.model).toBe(model);
+      expect(AzureClient.azureEndpoint).toBe(expectedValue);
+    });
+
+    it('should include model in deployment name if AZURE_USE_MODEL_AS_DEPLOYMENT_NAME and default model is set', () => {
+      const defaultModel = 'gpt-4-azure';
+      process.env.AZURE_USE_MODEL_AS_DEPLOYMENT_NAME = 'true';
+      process.env.AZURE_OPENAI_DEFAULT_MODEL = defaultModel;
+      const model = 'gpt-4-this-is-a-test-model-name';
+
+      const AzureClient = new OpenAIClient('test-api-key', createOptions(model));
+
+      const expectedValue = `https://${azureOpenAIApiInstanceName}.openai.azure.com/openai/deployments/${model}/chat/completions?api-version=${azureOpenAIApiVersion}`;
+
+      expect(AzureClient.modelOptions.model).toBe(defaultModel);
+      expect(AzureClient.azureEndpoint).toBe(expectedValue);
+    });
+
+    it('should not include model in deployment name if AZURE_USE_MODEL_AS_DEPLOYMENT_NAME is not set', () => {
+      const model = 'gpt-4-azure';
+
+      const AzureClient = new OpenAIClient('test-api-key', createOptions(model));
+
+      const expectedValue = `https://${azureOpenAIApiInstanceName}.openai.azure.com/openai/deployments/${azureOpenAIApiDeploymentName}/chat/completions?api-version=${azureOpenAIApiVersion}`;
+
+      expect(AzureClient.modelOptions.model).toBe(model);
+      expect(AzureClient.azureEndpoint).toBe(expectedValue);
     });
   });
 
@@ -308,6 +545,88 @@ describe('OpenAIClient', () => {
         }
         expect(totalTokens).toBe(testCase.expected);
       });
+    });
+  });
+
+  describe('sendMessage/getCompletion/chatCompletion', () => {
+    afterEach(() => {
+      delete process.env.AZURE_OPENAI_DEFAULT_MODEL;
+      delete process.env.AZURE_USE_MODEL_AS_DEPLOYMENT_NAME;
+      delete process.env.OPENROUTER_API_KEY;
+    });
+
+    it('should call getCompletion and fetchEventSource when using a text/instruct model', async () => {
+      const model = 'text-davinci-003';
+      const onProgress = jest.fn().mockImplementation(() => ({}));
+
+      const testClient = new OpenAIClient('test-api-key', {
+        ...defaultOptions,
+        modelOptions: { model },
+      });
+
+      const getCompletion = jest.spyOn(testClient, 'getCompletion');
+      await testClient.sendMessage('Hi mom!', { onProgress });
+
+      expect(getCompletion).toHaveBeenCalled();
+      expect(getCompletion.mock.calls.length).toBe(1);
+
+      const currentDateString = new Date().toLocaleDateString('en-us', {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric',
+      });
+
+      expect(getCompletion.mock.calls[0][0]).toBe(
+        `||>Instructions:\nYou are ChatGPT, a large language model trained by OpenAI. Respond conversationally.\nCurrent date: ${currentDateString}\n\n||>User:\nHi mom!\n||>Assistant:\n`,
+      );
+
+      expect(fetchEventSource).toHaveBeenCalled();
+      expect(fetchEventSource.mock.calls.length).toBe(1);
+
+      // Check if the first argument (url) is correct
+      const firstCallArgs = fetchEventSource.mock.calls[0];
+
+      const expectedURL = 'https://api.openai.com/v1/completions';
+      expect(firstCallArgs[0]).toBe(expectedURL);
+
+      const requestBody = JSON.parse(firstCallArgs[1].body);
+      expect(requestBody).toHaveProperty('model');
+      expect(requestBody.model).toBe(model);
+    });
+
+    it('[Azure OpenAI] should call chatCompletion and OpenAI.stream with correct args', async () => {
+      // Set a default model
+      process.env.AZURE_OPENAI_DEFAULT_MODEL = 'gpt4-turbo';
+
+      const onProgress = jest.fn().mockImplementation(() => ({}));
+      client.azure = defaultAzureOptions;
+      const chatCompletion = jest.spyOn(client, 'chatCompletion');
+      await client.sendMessage('Hi mom!', {
+        replaceOptions: true,
+        ...defaultOptions,
+        modelOptions: { model: 'gpt4-turbo', stream: true },
+        onProgress,
+        azure: defaultAzureOptions,
+      });
+
+      expect(chatCompletion).toHaveBeenCalled();
+      expect(chatCompletion.mock.calls.length).toBe(1);
+
+      const chatCompletionArgs = chatCompletion.mock.calls[0][0];
+      const { payload } = chatCompletionArgs;
+
+      expect(payload[0].role).toBe('user');
+      expect(payload[0].content).toBe('Hi mom!');
+
+      // Azure OpenAI does not use the model property, and will error if it's passed
+      // This check ensures the model property is not present
+      const streamArgs = stream.mock.calls[0][0];
+      expect(streamArgs).not.toHaveProperty('model');
+
+      // Check if the baseURL is correct
+      const constructorArgs = OpenAI.mock.calls[0][0];
+      const expectedURL = genAzureChatCompletion(defaultAzureOptions).split('/chat')[0];
+      expect(constructorArgs.baseURL).toBe(expectedURL);
     });
   });
 });

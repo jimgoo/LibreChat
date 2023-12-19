@@ -1,25 +1,31 @@
-const express = require('express');
-const mongoSanitize = require('express-mongo-sanitize');
-const { connectDb, indexSync } = require('../lib/db');
 const path = require('path');
+require('module-alias')({ base: path.resolve(__dirname, '..') });
 const cors = require('cors');
-const routes = require('./routes');
-const errorController = require('./controllers/ErrorController');
+const express = require('express');
 const passport = require('passport');
+const mongoSanitize = require('express-mongo-sanitize');
+const errorController = require('./controllers/ErrorController');
 const configureSocialLogins = require('./socialLogins');
+const { connectDb, indexSync } = require('~/lib/db');
+const { logger } = require('~/config');
+
+const paths = require('~/config/paths');
+const routes = require('./routes');
+
 const { PORT, HOST, ALLOW_SOCIAL_LOGIN } = process.env ?? {};
 
 const port = Number(PORT) || 3080;
 const host = HOST || 'localhost';
 const projectPath = path.join(__dirname, '..', '..', 'client');
-const { jwtLogin, joseLogin, passportLogin } = require('../strategies');
+const { jwtLogin, passportLogin } = require('~/strategies');
 
 const startServer = async () => {
   await connectDb();
-  console.log('Connected to MongoDB');
+  logger.info('Connected to MongoDB');
   await indexSync();
 
   const app = express();
+  app.locals.config = paths;
 
   // Middleware
   app.use(errorController);
@@ -39,11 +45,7 @@ const startServer = async () => {
 
   // OAUTH
   app.use(passport.initialize());
-  if (typeof Bun !== 'undefined') {
-    passport.use('jwt', await joseLogin());
-  } else {
-    passport.use(await jwtLogin());
-  }
+  passport.use(await jwtLogin());
   passport.use(passportLogin());
 
   if (ALLOW_SOCIAL_LOGIN?.toLowerCase() === 'true') {
@@ -68,19 +70,20 @@ const startServer = async () => {
   app.use('/api/models', routes.models);
   app.use('/api/plugins', routes.plugins);
   app.use('/api/config', routes.config);
+  app.use('/api/assistants', routes.assistants);
+  app.use('/api/files', routes.files);
 
-  // Static files
-  app.get('/*', function (req, res) {
-    res.sendFile(path.join(projectPath, 'dist', 'index.html'));
+  app.use((req, res) => {
+    res.status(404).sendFile(path.join(projectPath, 'dist', 'index.html'));
   });
 
   app.listen(port, host, () => {
     if (host == '0.0.0.0') {
-      console.log(
+      logger.info(
         `Server listening on all interfaces at port ${port}. Use http://localhost:${port} to access it`,
       );
     } else {
-      console.log(`Server listening at http://${host == '0.0.0.0' ? 'localhost' : host}:${port}`);
+      logger.info(`Server listening at http://${host == '0.0.0.0' ? 'localhost' : host}:${port}`);
     }
   });
 };
@@ -90,16 +93,24 @@ startServer();
 let messageCount = 0;
 process.on('uncaughtException', (err) => {
   if (!err.message.includes('fetch failed')) {
-    console.error('There was an uncaught error:');
-    console.error(err);
+    logger.error('There was an uncaught error:', err);
   }
 
   if (err.message.includes('fetch failed')) {
     if (messageCount === 0) {
-      console.error('Meilisearch error, search will be disabled');
+      logger.warn('Meilisearch error, search will be disabled');
       messageCount++;
     }
-  } else {
-    process.exit(1);
+
+    return;
   }
+
+  if (err.message.includes('OpenAIError') || err.message.includes('ChatCompletionMessage')) {
+    logger.error(
+      '\n\nAn Uncaught `OpenAIError` error may be due to your reverse-proxy setup or stream configuration, or a bug in the `openai` node package.',
+    );
+    return;
+  }
+
+  process.exit(1);
 });
