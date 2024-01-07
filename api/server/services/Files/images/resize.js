@@ -1,6 +1,8 @@
 const sharp = require('sharp');
 
 async function resizeImage(inputFilePath, resolution) {
+  console.log('resizeImage: ', inputFilePath, ', resolution:', resolution);
+
   const maxLowRes = 512;
   const maxShortSideHighRes = 768;
   const maxLongSideHighRes = 2000;
@@ -14,6 +16,7 @@ async function resizeImage(inputFilePath, resolution) {
   } else if (resolution === 'high') {
     const metadata = await sharp(inputFilePath).metadata();
     const isWidthShorter = metadata.width < metadata.height;
+    console.log(`Original image is ${metadata.width}x${metadata.height}`);
 
     if (isWidthShorter) {
       // Width is the shorter side
@@ -39,6 +42,8 @@ async function resizeImage(inputFilePath, resolution) {
 
     resizeOptions.width = newWidth;
     resizeOptions.height = newHeight;
+
+    console.log(`Resizing image to ${newWidth}x${newHeight}`);
   } else {
     throw new Error('Invalid resolution parameter');
   }

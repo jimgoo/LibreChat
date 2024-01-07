@@ -273,10 +273,14 @@ export default function useSSE(submission: TSubmission | null, index = 0) {
     let { message } = submission;
 
     const payloadData = createPayload(submission);
+    payloadData.payload.tell = submission.tell;
+
     let { payload } = payloadData;
     if (payload.endpoint === EModelEndpoint.assistant) {
       payload = removeNullishValues(payload);
     }
+
+    // console.log('useSSE: payload for SSE call', payload);
 
     const events = new SSE(payloadData.server, {
       payload: JSON.stringify(payload),
@@ -290,7 +294,7 @@ export default function useSSE(submission: TSubmission | null, index = 0) {
         const { plugins } = data;
         finalHandler(data, { ...submission, plugins, message });
         startupConfig?.checkBalance && balanceQuery.refetch();
-        console.log('final', data);
+        // console.log('final', data);
       }
       if (data.created) {
         message = {

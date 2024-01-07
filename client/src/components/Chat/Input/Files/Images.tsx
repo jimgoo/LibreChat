@@ -35,6 +35,7 @@ export default function Images({
 
     if (files.every((file) => file.progress === 1)) {
       setFilesLoading(false);
+      // console.log('All files loaded');
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [files]);

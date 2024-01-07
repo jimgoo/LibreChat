@@ -65,7 +65,6 @@ const useFileHandling = () => {
 
   const uploadImage = useUploadImageMutation({
     onSuccess: (data) => {
-      console.log('upload success', data);
       updateFileById(data.temp_file_id, {
         progress: 0.9,
         filepath: data.filepath,
@@ -79,7 +78,6 @@ const useFileHandling = () => {
       }, 300);
     },
     onError: (error, body) => {
-      console.log('upload error', error);
       deleteFileById(body.file_id);
     },
   });
@@ -99,6 +97,7 @@ const useFileHandling = () => {
   };
 
   const handleFiles = async (files: FileList | File[]) => {
+    // console.log('useFileHandlingResize handleFiles');
     Array.from(files).forEach((originalFile) => {
       if (!originalFile.type.startsWith('image/')) {
         // TODO: showToast('Only image files are supported');
@@ -189,6 +188,7 @@ const useFileHandling = () => {
   };
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    // console.log('useFileHandlingResize handleFileChange');
     event.stopPropagation();
     if (event.target.files) {
       setFilesLoading(true);

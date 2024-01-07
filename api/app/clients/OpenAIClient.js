@@ -33,6 +33,7 @@ class OpenAIClient extends BaseClient {
     this.shouldSummarize = this.contextStrategy === 'summarize';
     this.azure = options.azure || false;
     this.setOptions(options);
+    this.tell = options.req.body.tell;
   }
 
   // TODO: PluginsClient calls this 3x, unneeded
@@ -78,6 +79,7 @@ class OpenAIClient extends BaseClient {
 
     this.isVisionModel = validateVisionModel(this.modelOptions.model);
 
+    // this switches to the vision model automatically if an image is provided
     if (this.options.attachments && !this.isVisionModel) {
       this.modelOptions.model = 'gpt-4-vision-preview';
       this.isVisionModel = true;
@@ -392,6 +394,7 @@ class OpenAIClient extends BaseClient {
   }
 
   async sendCompletion(payload, opts = {}) {
+    console.log('OpenAIClient.sendCompletion: ', payload, '\nopts: ', opts);
     let reply = '';
     let result = null;
     let streamResult = null;
@@ -399,6 +402,7 @@ class OpenAIClient extends BaseClient {
     const invalidBaseUrl = this.completionsUrl && extractBaseURL(this.completionsUrl) === null;
     const useOldMethod = !!(invalidBaseUrl || !this.isChatCompletion);
     if (typeof opts.onProgress === 'function' && useOldMethod) {
+      console.log('OpenAIClient.sendCompletion: method 1');
       await this.getCompletion(
         payload,
         (progressMessage) => {
@@ -435,6 +439,17 @@ class OpenAIClient extends BaseClient {
         opts.abortController || new AbortController(),
       );
     } else if (typeof opts.onProgress === 'function') {
+      console.log('OpenAIClient.sendCompletion: method 2');
+      // if (opts.tell === '') {
+      //   reply = await this.chatCompletion({
+      //     payload,
+      //     clientOptions: opts,
+      //     onProgress: opts.onProgress,
+      //     abortController: opts.abortController,
+      //   });
+      // } else {
+      //   reply = opts.tell;
+      // }
       reply = await this.chatCompletion({
         payload,
         clientOptions: opts,
@@ -442,6 +457,7 @@ class OpenAIClient extends BaseClient {
         abortController: opts.abortController,
       });
     } else {
+      console.log('OpenAIClient.sendCompletion: method 3');
       result = await this.getCompletion(
         payload,
         null,
@@ -459,6 +475,7 @@ class OpenAIClient extends BaseClient {
 
     if (streamResult && typeof opts.addMetadata === 'function') {
       const { finish_reason } = streamResult.choices[0];
+      console.log('OpenAIClient.sendCompletion: finish_reason:', finish_reason);
       opts.addMetadata({ finish_reason });
     }
     return reply.trim();
@@ -712,6 +729,7 @@ ${convo}
   }
 
   async chatCompletion({ payload, onProgress, clientOptions, abortController = null }) {
+    console.log('OpenAIClient.chatCompletion: clientOptions: ', clientOptions);
     let error = null;
     const errorCallback = (err) => (error = err);
     let intermediateReply = '';
@@ -781,38 +799,47 @@ ${convo}
 
       let UnexpectedRoleError = false;
       if (modelOptions.stream) {
-        const stream = await openai.beta.chat.completions
-          .stream({
-            ...modelOptions,
-            stream: true,
-          })
-          .on('abort', () => {
-            /* Do nothing here */
-          })
-          .on('error', (err) => {
-            handleOpenAIErrors(err, errorCallback, 'stream');
-          })
-          .on('finalMessage', (message) => {
-            if (message?.role !== 'assistant') {
-              stream.messages.push({ role: 'assistant', content: intermediateReply });
-              UnexpectedRoleError = true;
+        console.log('OpenAIClient.chatCompletion: modelOptions.stream');
+        if (clientOptions.tell === '') {
+          const stream = await openai.beta.chat.completions
+            .stream({
+              ...modelOptions,
+              stream: true,
+            })
+            .on('abort', () => {
+              /* Do nothing here */
+            })
+            .on('error', (err) => {
+              handleOpenAIErrors(err, errorCallback, 'stream');
+            })
+            .on('finalMessage', (message) => {
+              if (message?.role !== 'assistant') {
+                stream.messages.push({ role: 'assistant', content: intermediateReply });
+                UnexpectedRoleError = true;
+              }
+            });
+
+          for await (const chunk of stream) {
+            const token = chunk.choices[0]?.delta?.content || '';
+            intermediateReply += token;
+            onProgress(token);
+            if (abortController.signal.aborted) {
+              stream.controller.abort();
+              break;
             }
-          });
-
-        for await (const chunk of stream) {
-          const token = chunk.choices[0]?.delta?.content || '';
-          intermediateReply += token;
-          onProgress(token);
-          if (abortController.signal.aborted) {
-            stream.controller.abort();
-            break;
           }
-        }
 
-        if (!UnexpectedRoleError) {
-          chatCompletion = await stream.finalChatCompletion().catch((err) => {
-            handleOpenAIErrors(err, errorCallback, 'finalChatCompletion');
-          });
+          if (!UnexpectedRoleError) {
+            chatCompletion = await stream.finalChatCompletion().catch((err) => {
+              handleOpenAIErrors(err, errorCallback, 'finalChatCompletion');
+            });
+          }
+        } else {
+          // mimic the actual call
+          console.log('OpenAIClient.chatCompletion: clientOptions.tell !== "", returning tell value');
+          onProgress(clientOptions.tell);
+          clientOptions.addMetadata({ finish_reason: 'stop' });
+          return clientOptions.tell;
         }
       }
       // regular completion
@@ -838,6 +865,7 @@ ${convo}
 
       const { message, finish_reason } = chatCompletion.choices[0];
       if (chatCompletion && typeof clientOptions.addMetadata === 'function') {
+        console.log('OpenAIClient.chatCompletion: finish_reason:', finish_reason, 'type: ', typeof(finish_reason));
         clientOptions.addMetadata({ finish_reason });
       }
 

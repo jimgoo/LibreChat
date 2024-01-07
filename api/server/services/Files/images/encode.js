@@ -56,7 +56,9 @@ async function encodeAndFormat(req, files, endpoint) {
 
   // TODO: make detail configurable, as of now resizing is done
   // to prefer "high" but "low" may be used if the image is small enough
-  const detail = req.body.detail ?? 'auto';
+  // const detail = req.body.detail ?? 'auto';
+  const detail = 'high';
+  console.log('detail', detail);
   const encodedImages = await Promise.all(promises);
 
   const result = {

@@ -19,7 +19,7 @@ const useFileHandling = () => {
   const { showToast } = useToastContext();
   const [errors, setErrors] = useState<string[]>([]);
   const setError = (error: string) => setErrors((prevErrors) => [...prevErrors, error]);
-  const { files, setFiles, setFilesLoading } = useChatContext();
+  const { files, setFiles, setFilesLoading, filesLoading } = useChatContext();
   const setFilesToDelete = useSetFilesToDelete();
 
   const displayToast = useCallback(() => {
@@ -54,6 +54,7 @@ const useFileHandling = () => {
   }, [errors, debouncedDisplayToast]);
 
   const addFile = (newFile: ExtendedFile) => {
+    // console.log('useFileHandling addFile, newFile: ', newFile);
     setFiles((currentFiles) => {
       const updatedFiles = new Map(currentFiles);
       updatedFiles.set(newFile.file_id, newFile);
@@ -62,6 +63,7 @@ const useFileHandling = () => {
   };
 
   const replaceFile = (newFile: ExtendedFile) => {
+    // console.log('useFileHandling replaceFile, newFile: ', newFile);
     setFiles((currentFiles) => {
       const updatedFiles = new Map(currentFiles);
       updatedFiles.set(newFile.file_id, newFile);
@@ -196,6 +198,7 @@ const useFileHandling = () => {
   };
 
   const handleFiles = async (_files: FileList | File[]) => {
+    // console.log('useFileHandling handleFiles', filesLoading);
     const fileList = Array.from(_files);
     /* Validate files */
     let filesAreValid: boolean;
@@ -210,6 +213,7 @@ const useFileHandling = () => {
       setFilesLoading(false);
       return;
     }
+    // console.log('useFileHandling handleFiles, filesAreValid: ', filesAreValid, ', number of files: ', fileList.length);
 
     /* Process files */
     fileList.forEach((originalFile) => {
@@ -235,6 +239,8 @@ const useFileHandling = () => {
             ...extendedFile,
             progress: 0.6,
           };
+          // console.log('useFileHandling handleFiles, extendedFile after load: ', extendedFile);
+          // console.log('useFileHandling handleFiles, filesLoading: ', filesLoading);
           replaceFile(extendedFile);
 
           await uploadFile(extendedFile);
@@ -250,6 +256,7 @@ const useFileHandling = () => {
   };
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    // console.log('useFileHandling handleFileChange');
     event.stopPropagation();
     if (event.target.files) {
       setFilesLoading(true);

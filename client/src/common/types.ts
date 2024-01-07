@@ -85,6 +85,7 @@ export type TAskProps = {
   parentMessageId?: string | null;
   conversationId?: string | null;
   messageId?: string | null;
+  tell?: string | null;
 };
 
 export type TOptions = {

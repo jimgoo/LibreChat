@@ -16,6 +16,7 @@ class BaseClient {
       month: 'long',
       day: 'numeric',
     });
+    this.tell = '';
   }
 
   setOptions() {
@@ -63,6 +64,7 @@ class BaseClient {
   }
 
   async setMessageOptions(opts = {}) {
+    console.log('setMessageOptions: opts', opts);
     if (opts && opts.replaceOptions) {
       this.setOptions(opts);
     }
@@ -369,6 +371,8 @@ class BaseClient {
   }
 
   async sendMessage(message, opts = {}) {
+    console.log('BaseClient.sendMessage: message', message, '\nopts', opts);
+
     const { user, head, isEdited, conversationId, responseMessageId, saveOptions, userMessage } =
       await this.handleStartMethods(message, opts);
 
@@ -438,7 +442,16 @@ class BaseClient {
       });
     }
 
+    // const completion = await this.sendCompletion(payload, opts);
+    // let completion;
+    // if (this.tell !== '') {
+    //   completion = this.tell;
+    // } else {
+    //   completion = await this.sendCompletion(payload, opts);
+    // }
+    opts.tell = this.tell;
     const completion = await this.sendCompletion(payload, opts);
+    
     const responseMessage = {
       messageId: responseMessageId,
       conversationId,
@@ -516,6 +529,7 @@ class BaseClient {
   }
 
   async saveMessageToDatabase(message, endpointOptions, user = null) {
+    // console.log('saveMessageToDatabase: message', message, '\nendpointOptions', endpointOptions, '\nuser', user);
     await saveMessage({ ...message, user, unfinished: false, cancelled: false });
     await saveConvo(user, {
       conversationId: message.conversationId,

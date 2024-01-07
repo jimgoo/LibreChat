@@ -118,7 +118,7 @@ export default function useChatHelpers(index = 0, paramId: string | undefined) {
   const setSubmission = useSetRecoilState(store.submissionByIndex(index));
 
   const ask: TAskFunction = (
-    { text, parentMessageId = null, conversationId = null, messageId = null },
+    { text, parentMessageId = null, conversationId = null, messageId = null, tell = ''},
     {
       editedText = null,
       editedMessageId = null,
@@ -244,7 +244,9 @@ export default function useChatHelpers(index = 0, paramId: string | undefined) {
       isContinued,
       isRegenerate,
       initialResponse,
+      tell,
     };
+    // console.log('useChatHelpers: ask: submission', submission);
 
     if (isRegenerate) {
       setMessages([...submission.messages, initialResponse]);

@@ -122,6 +122,7 @@ class ChatGPTClient extends BaseClient {
     } else {
       this.completionsUrl = 'https://api.openai.com/v1/completions';
     }
+    console.log('Completions URL: ', this.completionsUrl);
 
     return this;
   }
