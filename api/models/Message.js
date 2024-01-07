@@ -9,23 +9,23 @@ module.exports = {
 
   async saveMessage({
     user,
+    endpoint,
     messageId,
     newMessageId,
     conversationId,
     parentMessageId,
     sender,
     text,
-    isCreatedByUser = false,
+    isCreatedByUser,
     error,
     unfinished,
-    cancelled,
     files,
-    isEdited = false,
-    finish_reason = null,
-    tokenCount = null,
-    plugin = null,
-    plugins = null,
-    model = null,
+    isEdited,
+    finish_reason,
+    tokenCount,
+    plugin,
+    plugins,
+    model,
   }) {
     try {
       const validConvoId = idSchema.safeParse(conversationId);
@@ -35,6 +35,7 @@ module.exports = {
 
       const update = {
         user,
+        endpoint,
         messageId: newMessageId || messageId,
         conversationId,
         parentMessageId,
@@ -45,7 +46,6 @@ module.exports = {
         finish_reason,
         error,
         unfinished,
-        cancelled,
         tokenCount,
         plugin,
         plugins,
