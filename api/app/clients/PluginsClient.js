@@ -182,6 +182,7 @@ class PluginsClient extends OpenAIClient {
       if (errorMessage.length > 0) {
         logger.debug('[PluginsClient] Caught error, input: ' + JSON.stringify(input));
       }
+      console.log(`[PluginsClient] Attempt ${attempts} of ${maxAttempts}, input: ${JSON.stringify(input)}, signal: ${signal}, stream: ${stream}`);
 
       try {
         this.result = await this.executor.call({ input, signal }, [
@@ -247,6 +248,7 @@ class PluginsClient extends OpenAIClient {
       return super.sendMessage(message, opts);
     }
     logger.debug('[PluginsClient] sendMessage', { message, opts });
+    console.log('[PluginsClient] sendMessage: message' + JSON.stringify(message, null, 2));
     const {
       user,
       isEdited,

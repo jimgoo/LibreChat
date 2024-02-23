@@ -1,5 +1,5 @@
 import { Disclosure } from '@headlessui/react';
-import { useCallback, memo, ReactNode } from 'react';
+import { useCallback, memo, ReactNode, Fragment } from 'react';
 import { useGetEndpointsQuery } from 'librechat-data-provider/react-query';
 import type { TResPlugin, TInput } from 'librechat-data-provider';
 import { ChevronDownIcon, LucideProps } from 'lucide-react';
@@ -108,16 +108,24 @@ const Plugin: React.FC<PluginProps> = ({ plugin }) => {
                   classProp="max-h-[450px]"
                 />
                 {plugin.outputs && plugin.outputs.length > 0 && (
-                  <CodeBlock
-                    lang={
-                      latestPlugin ? `RESPONSE FROM ${latestPlugin?.toUpperCase()}` : 'RESPONSE'
-                    }
-                    codeChildren={formatJSON(plugin.outputs ?? '')}
-                    plugin={true}
-                    classProp="max-h-[450px]"
-                  />
+                  <Fragment>
+                    <CodeBlock
+                      lang={
+                        latestPlugin ? `RESPONSE FROM ${latestPlugin?.toUpperCase()}` : 'RESPONSE'
+                      }
+                      codeChildren={formatJSON(plugin.outputs ?? '')}
+                      plugin={true}
+                      classProp="max-h-[450px]"
+                    />
+                  </Fragment>
                 )}
               </Disclosure.Panel>
+              {plugin.outputs && plugin.outputs.includes("<audio>") && (
+                <audio controls autoPlay>
+                  <source src={plugin.outputs.match(/<audio>(.*?)<\/audio>/)?.[1] || ''} type="audio/mp3" />
+                  Your browser does not support the video tag.
+                </audio>
+              )}
             </>
           );
         }}

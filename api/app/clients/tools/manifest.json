@@ -96,7 +96,7 @@
     ]
   },
   {
-    "name": "DALL-E-3",
+    "name": "Image Generator",
     "pluginKey": "dalle",
     "description": "[DALL-E-3] Create realistic images and art from a description in natural language",
     "icon": "https://i.imgur.com/u2TzXzH.png",
@@ -170,6 +170,13 @@
     "pluginKey": "CodeBrew",
     "description": "Use 'CodeBrew' to virtually interpret Python, Node, C, C++, Java, C#, PHP, MySQL, Rust or Go code.",
     "icon": "https://imgur.com/iLE5ceA.png",
+    "authConfig": []
+  },
+  {
+    "name": "Music Player",
+    "pluginKey": "MusicPlayer",
+    "description": "When you are asked to start a session or an experience, use MusicPlayer to play some music.",
+    "icon": "https://i.imgur.com/kd9GKYW.jpeg",
     "authConfig": []
   }
 ]

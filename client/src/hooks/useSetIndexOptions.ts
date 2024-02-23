@@ -107,6 +107,10 @@ const useSetOptions: TUseSetOptions = (preset = false) => {
   };
 
   function checkPluginSelection(value: string) {
+    // console.log('checkPluginSelection', value, conversation?.tools);
+    // if (['MusicPlayer', 'dalle'].includes(value)) {
+    //   return true;
+    // }
     if (!conversation?.tools) {
       return false;
     }
@@ -134,6 +138,7 @@ const useSetOptions: TUseSetOptions = (preset = false) => {
   };
 
   const setTools: (newValue: string) => void = (newValue) => {
+    console.log('setTools', newValue);
     if (newValue === 'pluginStore') {
       setShowPluginStoreDialog(true);
       return;
@@ -141,6 +146,7 @@ const useSetOptions: TUseSetOptions = (preset = false) => {
 
     const update = {};
     const current = conversation?.tools || [];
+    
     const isSelected = checkPluginSelection(newValue);
     const tool =
       availableTools[availableTools.findIndex((el: TPlugin) => el.pluginKey === newValue)];
@@ -149,6 +155,7 @@ const useSetOptions: TUseSetOptions = (preset = false) => {
     } else {
       update['tools'] = [...current, tool];
     }
+    console.log(`setTools ${newValue}, isSelected: ${isSelected}, tool: ${tool.pluginKey}, currentTools: ${JSON.stringify(current, null, 2)}, newTools: ${JSON.stringify(update['tools'], null, 2)}`);
 
     localStorage.setItem('lastSelectedTools', JSON.stringify(update['tools']));
     setConversation(

@@ -61,6 +61,8 @@ export default function useTextarea({ setText, submitMessage, disabled = false }
         return localize('com_endpoint_message_not_appendable');
       }
 
+      return 'Message Choose Your Horizon...';
+
       const sender = getSender(conversation as TEndpointOption);
 
       return `${localize('com_endpoint_message')} ${sender ? sender : 'ChatGPT'}…`;

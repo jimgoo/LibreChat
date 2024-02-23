@@ -311,6 +311,8 @@ export default function useSSE(submission: TSubmission | null, index = 0) {
     let { message } = submission;
 
     const payloadData = createPayload(submission);
+    payloadData.payload.promptTemplate = submission.promptTemplate;
+
     let { payload } = payloadData;
     if (payload.endpoint === EModelEndpoint.assistant) {
       payload = removeNullishValues(payload);
@@ -338,6 +340,7 @@ export default function useSSE(submission: TSubmission | null, index = 0) {
         };
         createdHandler(data, { ...submission, message });
       } else {
+        // console.log(`message text: ${data.text}`);
         const text = data.text || data.response;
         const { plugin, plugins } = data;
 

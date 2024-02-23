@@ -54,8 +54,8 @@ export default function useMessageHelpers(props: TMessageProps) {
   const icon = Icon({
     ...conversation,
     ...(message as TMessage),
-    iconURL: getEndpointField(endpointsConfig, conversation?.endpoint, 'iconURL'),
-    model: message?.model ?? conversation?.model,
+    iconURL: '/CYH-logo-v2.png', //getEndpointField(endpointsConfig, conversation?.endpoint, 'iconURL'),
+    model: 'CYH', //message?.model ?? conversation?.model,
     size: 28.8,
   });
 

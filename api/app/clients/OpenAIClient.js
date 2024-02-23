@@ -15,6 +15,7 @@ const { runTitleChain } = require('./chains');
 const { tokenSplit } = require('./document');
 const BaseClient = require('./BaseClient');
 const { logger } = require('~/config');
+const axios = require('axios');
 
 // Cache to store Tiktoken instances
 const tokenizersCache = {};
@@ -33,6 +34,9 @@ class OpenAIClient extends BaseClient {
     this.shouldSummarize = this.contextStrategy === 'summarize';
     this.azure = options.azure || false;
     this.setOptions(options);
+    this.promptTemplate = options.req.body.promptTemplate;
+    console.log('options.req.body', options.req.body);
+    console.log(`OpenAIClient.constructor: ${this.promptTemplate}`);
   }
 
   // TODO: PluginsClient calls this 3x, unneeded
@@ -200,6 +204,8 @@ class OpenAIClient extends BaseClient {
     if (this.useOpenRouter) {
       this.completionsUrl = 'https://openrouter.ai/api/v1/chat/completions';
     }
+
+    console.log(`OpenAIClient.setOptions: completionsUrl: ${this.completionsUrl}`);
 
     return this;
   }
@@ -407,6 +413,77 @@ class OpenAIClient extends BaseClient {
   }
 
   async sendCompletion(payload, opts = {}) {
+
+    console.log(`OpenAIClient.sendCompletion: payload: ${JSON.stringify(payload, null, 2)}`);
+    console.log(`OpenAIClient.sendCompletion: opts: ${JSON.stringify(opts, null, 2)}`);
+
+    /*
+    const userToken = '';
+    const url = 'https://api.chooseketamine.com/users';
+    const proxyUrl = 'http://0.0.0.0:8080/';
+    console.log(proxyUrl + url);
+    */
+    
+    // await fetch(proxyUrl + url, {
+    //   method: 'GET',
+    //   headers: {
+    //     'Content-Type': 'application/json;charset=UTF-8',
+    //     'Authorization': userToken,
+    //     'origin': 'https://chooseketamine.com',
+    //   }
+    // })
+    // .then(response => response.json())
+    // .then(data => console.log(data))
+    // .catch(error => console.error('Error:', error));
+
+    // const userData = await axios({
+    //   url: proxyUrl + url,
+    //   method: 'GET',
+    //   headers: {
+    //     'Content-Type': 'application/json;charset=UTF-8',
+    //     'Authorization': userToken,
+    //     'origin': 'https://chooseketamine.com',
+    //   },
+    // });
+    // //console.log(`OpenAIClient.sendCompletion: userData: ${JSON.stringify(userData, null, 2)}`);
+    // console.log(userData.data);
+
+    /*
+    if (this.promptTemplate === 'default') {
+      const oldMessage = payload[payload.length - 1].content;
+      console.log(`OpenAIClient.sendCompletion: oldMessage: ${oldMessage}`);
+      
+      const newMessage = `You are a helpful assistant for an at-home ketamine therapy company called Choose Your Horizon. Answer customer questions about the company, its products, and its policies.
+
+      You'll now be given some information about a customer. You can use this information to answer any questions that the customer asks.
+      
+      The customer has the following attributes list:
+      - Email: jimmiegoode@gmail.com
+      - First name: Jimmie
+      - Last name: Goode
+      - Current address: 18 Beaux Rivages Dr, Shreveport, LA 71106
+      - Phone number: 1112223310
+      
+      Choose Your Horizon products come in packs. Each pack contains a certain number of ketamine treatments.
+      
+      A "2 Pack" product type has two sessions. A "4 Pack" product type has four sessions. A "6 Pack" product type has six sessions. An "8 Pack" product type has eight sessions.
+      
+      The customer has purchased the following packs in tabular format, which includes columns for the status of each step and the confirmation link for that step if applicable.
+      |   purchase_number | purchase_date   | product_type   | payment_type   | is_current_pack   | is_pack_complete   | Telemedicine Paperwork - Status   | PHQ/GAD/PCL Assessment - Status   | PHQ/GAD/PCL Assessment Followup - Status   | ID Upload - Status   | Integration Session (included w/pack) - Status   | Consultation (before 1st session for repeat customer) - Status   | 1st Session - Status   | 2nd Session - Status   | 3rd Session - Status   | 4th Session - Status   | 5th Session - Status   | 6th Session - Status   | 7th Session - Status   | 8th Session - Status   | Integration Session (add-on 1) - Status   | Integration Session (add-on 1) - Confirmation Link                                                                 | Group Integration Session (add-on 1) - Status   | Group Integration Session (add-on 1) - Confirmation Link                                                           | Consultation (after 2nd session) - Status   | Consultation (after 2nd session) - Confirmation Link                                                               | 6th Session - Confirmation Link                                                                                    | Consultation (before 1st session for new customer) - Status   | Consultation (before 1st session for new customer) - Confirmation Link                                             | 1st Session - Confirmation Link                                                                                    | 2nd Session - Confirmation Link                                                                                    |
+      |------------------:|:----------------|:---------------|:---------------|:------------------|:-------------------|:----------------------------------|:----------------------------------|:-------------------------------------------|:---------------------|:-------------------------------------------------|:-----------------------------------------------------------------|:-----------------------|:-----------------------|:-----------------------|:-----------------------|:-----------------------|:-----------------------|:-----------------------|:-----------------------|:------------------------------------------|:-------------------------------------------------------------------------------------------------------------------|:------------------------------------------------|:-------------------------------------------------------------------------------------------------------------------|:--------------------------------------------|:-------------------------------------------------------------------------------------------------------------------|:-------------------------------------------------------------------------------------------------------------------|:--------------------------------------------------------------|:-------------------------------------------------------------------------------------------------------------------|:-------------------------------------------------------------------------------------------------------------------|:-------------------------------------------------------------------------------------------------------------------|
+      |                 1 | 2023-06-28      | 2 Pack         | nmi            | False             | False              | completed                         | completed                         | incomplete                                 | completed            | N/A                                              | N/A                                                              | completed              | completed              | N/A                    | N/A                    | N/A                    | N/A                    | N/A                    | N/A                    | N/A                                       | N/A                                                                                                                | N/A                                             | N/A                                                                                                                | canceled                                    | https://app.acuityscheduling.com/schedule.php?owner=24101249&action=appt&id%5B%5D=ff0b8d5b22c13867ac2a215824e371ba | N/A                                                                                                                | canceled                                                      | https://app.acuityscheduling.com/schedule.php?owner=24101249&action=appt&id%5B%5D=19487f5e466a55846288a60833bc4d2f | https://app.acuityscheduling.com/schedule.php?owner=24101249&action=appt&id%5B%5D=039bef46a74f95c1fed5f4d8cda89d8f | https://app.acuityscheduling.com/schedule.php?owner=24101249&action=appt&id%5B%5D=3de23b374331d22996437978bf1a1b9d |
+      |                 2 | 2023-09-11      | 4 Pack         | nmi            | False             | False              | incomplete                        | incomplete                        | incomplete                                 | incomplete           | N/A                                              | incomplete                                                       | incomplete             | incomplete             | incomplete             | incomplete             | N/A                    | N/A                    | N/A                    | N/A                    | N/A                                       | N/A                                                                                                                | N/A                                             | N/A                                                                                                                | N/A                                         | N/A                                                                                                                | N/A                                                                                                                | N/A                                                           | N/A                                                                                                                | N/A                                                                                                                | N/A                                                                                                                |
+      |                 3 | 2023-10-16      | 6 Pack         | nmi            | True              | False              | completed                         | completed                         | incomplete                                 | completed            | N/A                                              | N/A                                                              | completed              | completed              | completed              | completed              | completed              | canceled               | N/A                    | N/A                    | canceled                                  | https://app.acuityscheduling.com/schedule.php?owner=24101249&action=appt&id%5B%5D=efa0a89cd8c02435be91543be5e54879 | canceled                                        | https://app.acuityscheduling.com/schedule.php?owner=24101249&action=appt&id%5B%5D=09e424d89751469b90a369d74881c6ad | completed                                   | https://app.acuityscheduling.com/schedule.php?owner=24101249&action=appt&id%5B%5D=c8c2ddddf0793e2c68f89bc825afbb73 | https://app.acuityscheduling.com/schedule.php?owner=24101249&action=appt&id%5B%5D=e6895e48fb4505ad43c459fdda3b1ca3 | N/A                                                           | N/A                                                                                                                | N/A                                                                                                                | N/A                                                                                                                |
+      |                 4 | 2023-10-26      | 6 Pack         | nmi            | False             | False              | incomplete                        | incomplete                        | incomplete                                 | incomplete           | N/A                                              | incomplete                                                       | incomplete             | incomplete             | incomplete             | incomplete             | incomplete             | incomplete             | N/A                    | N/A                    | N/A                                       | N/A                                                                                                                | N/A                                             | N/A                                                                                                                | N/A                                         | N/A                                                                                                                | N/A                                                                                                                | N/A                                                           | N/A                                                                                                                | N/A                                                                                                                | N/A                                                                                                                |
+      |                 5 | 2023-11-09      | 6 Pack         | nmi            | False             | False              | incomplete                        | incomplete                        | incomplete                                 | incomplete           | N/A                                              | incomplete                                                       | incomplete             | incomplete             | incomplete             | incomplete             | incomplete             | incomplete             | N/A                    | N/A                    | N/A                                       | N/A                                                                                                                | N/A                                             | N/A                                                                                                                | N/A                                         | N/A                                                                                                                | N/A                                                                                                                | N/A                                                           | N/A                                                                                                                | N/A                                                                                                                | N/A                                                                                                                |
+      |                 6 | 2023-12-12      | 8 Pack         | nmi            | False             | False              | incomplete                        | incomplete                        | incomplete                                 | incomplete           | incomplete                                       | incomplete                                                       | incomplete             | incomplete             | incomplete             | incomplete             | incomplete             | incomplete             | incomplete             | incomplete             | N/A                                       | N/A                                                                                                                | N/A                                             | N/A                                                                                                                | N/A                                         | N/A                                                                                                                | N/A                                                                                                                | N/A                                                           | N/A                                                                                                                | N/A                                                                                                                | N/A                                                                                                                |
+      
+      The customer says: "${oldMessage}". What is your response?`;
+
+      payload[payload.length - 1] = {role: 'user', content: newMessage};
+    }
+    */
+
     let reply = '';
     let result = null;
     let streamResult = null;

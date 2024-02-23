@@ -52,9 +52,24 @@ function createLLM({
   if (azure && process.env.AZURE_OPENAI_DEFAULT_MODEL) {
     modelOptions.modelName = process.env.AZURE_OPENAI_DEFAULT_MODEL;
   }
+  
+  // override GPT model
+  // configuration.baseURL = 'http://localhost:50217/v1';
+  // modelOptions.modelName = 'meetkai/functionary-small-v2.2'; //'Trelis/Llama-2-7b-chat-hf-function-calling-v3'; // meta-llama/Llama-2-7b-chat-hf';
+  // // Error in applying chat template from request: Conversation roles must alternate user/assistant/user/assistant/..
+  // // modelOptions.modelName = 'mistralai/Mistral-7B-Instruct-v0.2';
 
-  // console.debug('createLLM: configOptions');
-  // console.debug(configOptions);
+  const first = {
+    streaming,
+    verbose: true,
+    credentials,
+    configuration,
+    ...azureOptions,
+    ...modelOptions,
+    ...credentials,
+    callbacks,
+  };
+  console.log(`[createLLM] first arg to ChatOpenAI: ${JSON.stringify(first, null, 2)}`);
 
   return new ChatOpenAI(
     {

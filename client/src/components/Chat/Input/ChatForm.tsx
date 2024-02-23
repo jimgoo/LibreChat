@@ -25,7 +25,7 @@ export default function ChatForm({ index = 0 }) {
   } = useChatContext();
 
   const submitMessage = () => {
-    ask({ text });
+    ask({ text: text, promptTemplate: 'default' });
     setText('');
   };
 

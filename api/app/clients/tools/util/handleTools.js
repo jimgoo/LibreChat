@@ -19,6 +19,7 @@ const {
   CodeSherpa,
   CodeSherpaTools,
   CodeBrew,
+  MusicPlayer,
 } = require('../');
 const { loadToolSuite } = require('./loadToolSuite');
 const { loadSpecs } = require('./loadSpecs');
@@ -99,6 +100,7 @@ const loadTools = async ({
     'stable-diffusion': functions ? StructuredSD : StableDiffusionAPI,
     'azure-ai-search': functions ? StructuredACS : AzureAISearch,
     CodeBrew: CodeBrew,
+    MusicPlayer: MusicPlayer,
   };
 
   const openAIApiKey = await getOpenAIKey(options, user);
